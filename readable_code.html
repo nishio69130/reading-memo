@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リーダーブルコード</title>
+  <style>
+    :root {
+      --amazon-dark: #232F3E;   /* Amazonの濃い色 */
+      --amazon-orange: #FF9900; /* Amazonロゴのオレンジ */
+      --bg-light: #ffffff;
+      --text-dark: #333;
+      --code-bad-bg: #ffeeee;   /* 悪い例用の薄い赤 */
+      --code-bad-border: #ff4444;
+      --code-good-bg: #eeffee;  /* 良い例用の薄い緑 */
+      --code-good-border: #44cc44;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    /* =========================
+       固定ヘッダー
+       ========================= */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      background: var(--amazon-dark);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    /* 目次を開閉するパネル */
+    #tocToggle {
+      margin-left: auto;
+      background: var(--amazon-orange);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    #tocToggle:hover {
+      opacity: 0.85;
+    }
+
+    /* 目次パネル（ヘッダーの下に固定） */
+    #tocPanel {
+      position: fixed;
+      top: 60px;       /* ヘッダーの高さに合わせる */
+      left: 0;
+      right: 0;
+      height: 0;       /* 初期は折りたたみ */
+      background: #f8f8f8;
+      color: var(--amazon-dark);
+      overflow-y: auto;
+      border-bottom: 1px solid #ddd;
+      transition: height 0.3s ease;
+      z-index: 9999;
+    }
+    #tocPanel.open {
+      height: 25vh;    /* 開いた状態で画面の1/4の高さ */
+    }
+    #tocPanel-content {
+      padding: 15px;
+    }
+    #tocPanel-content h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+    #tocPanel-content a {
+      color: var(--amazon-orange);
+      text-decoration: none;
+    }
+    #tocPanel-content a:hover {
+      text-decoration: underline;
+    }
+    #tocPanel-content ol,
+    #tocPanel-content ul {
+      margin-left: 20px;
+      margin-bottom: 0;
+    }
+
+    /* =========================
+       メインコンテンツ
+       ========================= */
+    /* ヘッダー＋目次パネル分の余白を開けて重ならないように */
+    .container {
+      margin-top: 60px;  /* ヘッダー高さ */
+    }
+
+    /* 目次パネルが開いても本文が隠れないよう、さらに下げる */
+    /* 必要に応じて値を調整（60 + 25vh相当） */
+    /* ここでは固定値ではなく、スクロールで隠れないようにする設計 */
+    /* → 例として、余裕をもってマージンを追加 */
+    .open + .container {
+      margin-top: 40vh; /* 目次パネルが開いた場合の例：画面の40%を余白に */
+    }
+
+    /* =========================
+       見出しスタイル
+       ========================= */
+    h2 {
+      font-size: 1.4rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 2px solid var(--amazon-orange);
+      padding-bottom: 4px;
+    }
+    h3 {
+      margin-top: 1.2rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.2rem;
+      border-left: 5px solid var(--amazon-orange);
+      padding-left: 8px;
+    }
+    h4 {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: var(--amazon-dark);
+    }
+
+    /* =========================
+       コードブロック
+       ========================= */
+    pre {
+      padding: 10px;
+      overflow-x: auto;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-size: 0.95rem;
+      margin-bottom: 1.2rem;
+      background: #f2f2f2;
+    }
+    .bad-example {
+      background: var(--code-bad-bg);
+      border-left: 6px solid var(--code-bad-border);
+      margin-bottom: 1rem;
+    }
+    .good-example {
+      background: var(--code-good-bg);
+      border-left: 6px solid var(--code-good-border);
+      margin-bottom: 1rem;
+    }
+    code {
+      white-space: pre;
+    }
+
+    strong {
+      color: var(--amazon-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー（固定） -->
+  <header id="pageHeader">
+    <h1>リーダーブルコード</h1>
+    <button id="tocToggle">目次</button>
+  </header>
+
+  <!-- 目次パネル（開閉） -->
+  <div id="tocPanel">
+    <div id="tocPanel-content">
+      <h2>目次</h2>
+      <ol>
+        <li><a href="#introduction">はじめに</a></li>
+        <li><a href="#ch1">1章 理解しやすいコード</a></li>
+        <li><a href="#part1">第Ⅰ部 表面上の改善</a></li>
+        <li><a href="#ch2">2章 名前に情報を詰め込む</a></li>
+        <ul>
+          <li><a href="#ch2-h3-1">明確な単語を選ぶ</a></li>
+          <li><a href="#ch2-h3-2">汎用的な名前を避ける</a></li>
+          <li><a href="#ch2-h3-3">名前の長さを決める</a></li>
+          <ul>
+            <li><a href="#ch2-h4-1">スコープが小さい場合は短い名前でよい</a></li>
+            <li><a href="#ch2-h4-2">スコープが大きい場合は長めでもよい</a></li>
+            <li><a href="#ch2-h4-3">不要な単語を使わない</a></li>
+          </ul>
+          <li><a href="#ch2-h3-4">名前のフォーマットを決める</a></li>
+        </ul>
+        <li><a href="#ch3">3章 誤解されない名前</a></li>
+        <li><a href="#ch4">4章 美しさ</a></li>
+        <ul>
+          <li><a href="#ch4-h3-1">なぜ美しさが大切なのか？</a></li>
+          <li><a href="#ch4-h3-2">メソッドを使った整列（重複排除）</a></li>
+          <li><a href="#ch4-h3-3">一貫性と意味のある並び</a></li>
+          <li><a href="#ch4-h3-4">宣言をブロックにまとめる</a></li>
+          <li><a href="#ch4-h3-5">コードを段落ごとにまとめる</a></li>
+        </ul>
+        <li><a href="#ch5">5章 コメントすべきことを知る</a></li>
+        <ul>
+          <li><a href="#ch5-h3-1">コメントするべきでは「ない」こと</a></li>
+          <li><a href="#ch5-h3-2">自分の考えを記録する</a></li>
+          <li><a href="#ch5-h3-3">読み手の立場になって考える</a></li>
+        </ul>
+        <li><a href="#ch6">6章 コメントは正確で簡潔に</a></li>
+        <ul>
+          <li><a href="#ch6-h3-1">コメントを簡潔にしておく</a></li>
+          <li><a href="#ch6-h3-2">あいまいな代名詞を避ける</a></li>
+          <li><a href="#ch6-h3-3">歯切れの悪い文章を磨く</a></li>
+          <li><a href="#ch6-h3-4">関数の動作を正確に記述する</a></li>
+          <li><a href="#ch6-h3-5">コードの意図を書く</a></li>
+          <li><a href="#ch6-h3-6">「名前付き引数」コメント</a></li>
+          <li><a href="#ch6-h3-7">情報密度の高い言葉を使う</a></li>
+        </ul>
+      </ol>
+    </div>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div class="container" id="mainContainer">
+    <!-- はじめに -->
+    <section id="introduction">
+      <h2>はじめに</h2>
+      <p>
+        コードは理解しやすくなければなりません。<br>
+        理解しやすいコードとは、読み手がすぐに目的や処理内容を把握できるコードのことです。<br>
+        変数やメソッドの命名、コメントの書き方などを工夫し、読む人の負担を減らすように心がけましょう。
+      </p>
+    </section>
+
+    <!-- 1章 -->
+    <section id="ch1">
+      <h2>1章 理解しやすいコード</h2>
+      <p>
+        他の人が最短時間でコードを理解できるように書くことが求められます。<br>
+        命名や構造化によって、コードは大きく読みやすさが変わります。
+      </p>
+    </section>
+
+    <!-- 第Ⅰ部 -->
+    <section id="part1">
+      <h2>第Ⅰ部 表面上の改善</h2>
+      <p>コードの見た目や表層レベルでの改善から始めるだけでも、可読性が向上します。</p>
+    </section>
+
+    <!-- 2章 -->
+    <section id="ch2">
+      <h2>2章 名前に情報を詰め込む</h2>
+
+      <h3 id="ch2-h3-1">明確な単語を選ぶ</h3>
+      <p>明確な単語を選ぶことで、コードの意図をスムーズに伝えられます。</p>
+      <p><strong>例1：getPage(url) → fetchPage(url) / downloadPage(url)</strong></p>
+      <div class="bad-example">
+<pre><code>// あまり望ましくない例
+function getPage(url) {
+  // ページデータを取得して返す
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// より明確な例
+function fetchPage(url) {
+  // 外部リソースからページを取得する
+}
+
+function downloadPage(url) {
+  // ダウンロード機能でページを取得する
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch2-h3-2">汎用的な名前を避ける</h3>
+      <div class="bad-example">
+<pre><code>// あまり望ましくない例
+function getAverageTemperature(data) {
+  let total = 0;
+  let count = 0;
+  
+  for (let record of data) {
+    total += record.temperature;
+    count++;
+  }
+  
+  let tmp = total / count; // tmp だけだと何を表しているか分からない
+  return tmp;
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// よりわかりやすい例
+function getAverageTemperature(data) {
+  let total = 0;
+  let count = 0;
+  
+  for (let record of data) {
+    total += record.temperature;
+    count++;
+  }
+  
+  let averageTemp = total / count; // 「平均温度」を示す
+  return averageTemp;
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch2-h3-3">名前の長さを決める</h3>
+      <p>変数名や関数名は、長ければ良いわけでもなく、短すぎても伝わりません。用途で調整しましょう。</p>
+
+      <h4 id="ch2-h4-1">スコープが小さい場合は短い名前でよい</h4>
+      <div class="good-example">
+<pre><code>// 小さな関数内で役割が明確なら短くOK
+function sumArray(arr) {
+  let sum = 0;
+  for (let n of arr) {
+    sum += n;
+  }
+  return sum;
+}
+</code></pre>
+      </div>
+
+      <h4 id="ch2-h4-2">スコープが大きい場合は長めでもよい</h4>
+      <div class="good-example">
+<pre><code>// 参照範囲が広いなら明確に
+let currentLoggedInUserId = null;
+
+function login(userId) {
+  currentLoggedInUserId = userId;
+}
+
+function logout() {
+  currentLoggedInUserId = null;
+}
+</code></pre>
+      </div>
+
+      <h4 id="ch2-h4-3">不要な単語を使わない</h4>
+      <div class="bad-example">
+<pre><code>// あまり望ましくない例
+function getDataFunction(data) {
+  let dataArray = [];
+  for (let dataItem of data) {
+    dataArray.push(dataItem);
+  }
+  return dataArray;
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// より良い例
+function processData(data) {
+  let result = [];
+  for (let item of data) {
+    result.push(item);
+  }
+  return result;
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch2-h3-4">名前のフォーマットを決める</h3>
+<pre><code>// フォーマット例1：メンバー変数は prefix_、通常の変数はキャメルケース
+class Widget {
+  constructor() {
+    this.offsetX_ = 0;
+    this.offsetY_ = 0;
+  }
+  
+  moveWidget(deltaX, deltaY) {
+    let newPosX = this.offsetX_ + deltaX;
+    let newPosY = this.offsetY_ + deltaY;
+    
+    this.offsetX_ = newPosX;
+    this.offsetY_ = newPosY;
+  }
+}
+
+// フォーマット例2：定数は大文字スネークケース、その他はキャメルケース
+const MAX_ITEMS = 100; 
+let itemCount = 0;
+
+function addItem() {
+  if (itemCount < MAX_ITEMS) {
+    itemCount++;
+  } else {
+    console.log("Cannot add more items.");
+  }
+}
+</code></pre>
+
+    </section>
+
+    <!-- 3章 -->
+    <section id="ch3">
+      <h2>3章 誤解されない名前</h2>
+      <p>名前が曖昧だと、コードを読んだ人が処理内容を勘違いする可能性が高いです。</p>
+    </section>
+
+    <!-- 4章 -->
+    <section id="ch4">
+      <h2>4章 美しさ</h2>
+      <h3 id="ch4-h3-1">なぜ美しさが大切なのか？</h3>
+      <div class="bad-example">
+<pre><code>// 悪い例
+function calcPrice  (price, quantity){
+ let sum= price*quantity; console.log(sum);
+   return   sum;
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// 良い例
+function calcPrice(price, quantity) {
+  let sum = price * quantity;
+  console.log(sum);
+  return sum;
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch4-h3-2">メソッドを使った整列（重複排除）</h3>
+      <div class="bad-example">
+<pre><code>// 悪い例：同じロジックをコピペ
+function processOrder(order) {
+  // ...
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// 良い例：共通メソッドに分割
+function calculateOrderTotal(items) {
+  let subtotal = 0;
+  for (let item of items) {
+    subtotal += item.price * item.quantity;
+  }
+  let tax = subtotal * 0.1;
+  let shipping = 500;
+  return subtotal + tax + shipping;
+}
+
+function processOrder(order) {
+  let total1 = calculateOrderTotal(order.items);
+  let total2 = calculateOrderTotal(order.items);
+  console.log("Totals:", total1, total2);
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch4-h3-3">一貫性と意味のある並び</h3>
+      <div class="bad-example">
+<pre><code>// 悪い例
+function deleteProduct(id) { /* ... */ }
+let userName;
+function processPurchase(order) { /* ... */ }
+let productId;
+function createUser(name) { /* ... */ }
+let userAge;
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// 良い例
+// ユーザー関連
+let userName;
+let userAge;
+function createUser(name) { /* ... */ }
+
+// 商品関連
+let productId;
+function processPurchase(order) { /* ... */ }
+function deleteProduct(id) { /* ... */ }
+</code></pre>
+      </div>
+
+      <h3 id="ch4-h3-4">宣言をブロックにまとめる</h3>
+      <div class="bad-example">
+<pre><code>// 悪い例
+function sendMail(order) {
+  checkStock(order.items);
+  let senderEmail = "noreply@example.com";
+  // ...
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// 良い例
+function sendMail(order) {
+  let senderEmail = "noreply@example.com";
+  let server = getServer("SMTP");
+  
+  checkStock(order.items);
+  // ...
+}
+</code></pre>
+      </div>
+
+      <h3 id="ch4-h3-5">コードを段落ごとにまとめる</h3>
+      <div class="bad-example">
+<pre><code>// 悪い例
+function completeOrder(order) {
+  checkStock(order.items);
+  let user = getUser(order.userId);
+  sendEmail(order, user.email);
+  logTransaction(order);
+  applyCoupon(order);
+}
+</code></pre>
+      </div>
+      <div class="good-example">
+<pre><code>// 良い例
+function completeOrder(order) {
+  // 在庫チェック
+  checkStock(order.items);
+
+  // ユーザー情報取得
+  let user = getUser(order.userId);
+
+  // メール & トランザクション
+  sendEmail(order, user.email);
+  logTransaction(order);
+
+  // クーポン適用
+  applyCoupon(order);
+}
+</code></pre>
+      </div>
+    </section>
+
+    <!-- 5章 -->
+    <section id="ch5">
+      <h2>5章 コメントすべきことを知る</h2>
+      <h3 id="ch5-h3-1">コメントするべきでは「ない」こと</h3>
+      <div class="bad-example">
+<pre><code>// ここで sum を計算している
+let sum = price * quantity; 
+</code></pre>
+      </div>
+      <p>変数名やメソッド名を見れば明らかな内容を、わざわざコメントに書く必要はありません。</p>
+
+      <div class="bad-example">
+<pre><code>// この変数は商品の値段。後で更新する可能性あり
+// let d ← 悪い名前
+let d = 1000;
+</code></pre>
+      </div>
+
+      <h3 id="ch5-h3-2">自分の考えを記録する</h3>
+<pre><code>function calculateDiscount(price) {
+  // TODO: シーズンごとに割引率を変える計画
+  // 今は仮で10%固定
+  return price * 0.9;
+}
+
+function processData(data) {
+  // FIXME: dataがnullの場合の処理が未実装
+  // 呼び出し側で一旦対応
+}
+</code></pre>
+
+      <h3 id="ch5-h3-3">読み手の立場になって考える</h3>
+<pre><code>function parseCsvLine(line) {
+  // 区切り文字をカンマとタブに対応
+  // 将来スペース区切りにも対応するかも
+  return line.split(/[\t,]/);
+}
+
+// 全体像：注文データを受け取り→DB保存→メール送信
+function handleOrder(order) {
+  saveToDatabase(order);
+  sendEmail(order);
+  // ...
+}
+</code></pre>
+    </section>
+
+    <!-- 6章 -->
+    <section id="ch6">
+      <h2>6章 コメントは正確で簡潔に</h2>
+
+      <h3 id="ch6-h3-1">コメントを簡潔にしておく</h3>
+      <p>コメントは読み手に必要な情報を伝えるために書くもの。冗長になりすぎないよう注意する。</p>
+
+      <h3 id="ch6-h3-2">あいまいな代名詞を避ける</h3>
+      <p>「これ」「それ」「あれ」のような代名詞ばかりでは意図が伝わりにくい。明確な名詞を使う。</p>
+
+      <h3 id="ch6-h3-3">歯切れの悪い文章を磨く</h3>
+      <p>だらだらとしたコメントは可読性を下げる。要点を押さえ、読みやすく推敲する。</p>
+
+      <h3 id="ch6-h3-4">関数の動作を正確に記述する</h3>
+      <p>返り値や副作用などを誤解なく説明することで、利用者が安心して呼び出せる。</p>
+
+      <h3 id="ch6-h3-5">コードの意図を書く</h3>
+      <p>「なぜそうしたのか」が最も重要な場合が多い。実装の背景や方針をコメントに含める。</p>
+
+      <h3 id="ch6-h3-6">「名前付き引数」コメント</h3>
+      <p>JavaScriptに明示的な名前付き引数はないが、呼び出し例や引数の意味をコメントで示すと分かりやすい。</p>
+
+      <h3 id="ch6-h3-7">情報密度の高い言葉を使う</h3>
+      <p>抽象的な表現よりも、的確で濃い内容の単語を使うことで、コメントの意図が素早く伝わる。</p>
+    </section>
+
+  </div><!-- .container -->
+
+  <script>
+    const tocToggle = document.getElementById('tocToggle');
+    const tocPanel = document.getElementById('tocPanel');
+
+    // 目次ボタン開閉
+    tocToggle.addEventListener('click', () => {
+      tocPanel.classList.toggle('open');
+    });
+
+    // 目次のアンカーリンクにスムーズスクロール + ヘッダー分オフセット
+    document.querySelectorAll('#tocPanel-content a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').replace('#','');
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          const headerOffset = document.getElementById('pageHeader').offsetHeight;
+          const panelOpen = tocPanel.classList.contains('open');
+          // パネル分の高さ考慮
+          const panelHeight = panelOpen ? tocPanel.offsetHeight : 0;
+
+          // スクロール位置計算
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 10;
+
+          // アニメーションスクロール
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
